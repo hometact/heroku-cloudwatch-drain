@@ -88,6 +88,19 @@ func TestLogEntryWithEmptyLineAtTheEnd(t *testing.T) {
 	assert.Equal(t, "{\"heroku_app\":\"heroku\",\"heroku_process\":\"web.1\",\"message\":\"State changed from up to down\"}", l.m)
 }
 
+func TestLogEntryWith2EmptyLinesAtTheEnd(t *testing.T) {
+	app.parse = logparser.Parse
+	defer func() {
+		app.parse = parseFunc
+	}()
+
+	body := bytes.NewBuffer([]byte("89 <45>1 2016-10-15T08:59:08.723822+00:00 host heroku web.1 - State changed from up to down\n\n"))
+	r, err := http.Post(server.URL+"/app", "", body)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusAccepted, r.StatusCode)
+	assert.Equal(t, "{\"heroku_app\":\"heroku\",\"heroku_process\":\"web.1\",\"message\":\"State changed from up to down\"}", l.m)
+}
+
 func TestAnsiCodeStripping(t *testing.T) {
 	app.parse = logparser.Parse
 	app.stripAnsiCodes = true

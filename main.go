@@ -213,6 +213,9 @@ func (app *App) processMessages(r io.Reader, l logger, txn newrelic.Transaction)
 		if eof && len(b) == 0 {
 			break
 		}
+		if len(b) == 1 && string(b) == "\n" {
+			continue
+		}
 		entry, err := app.parse(b)
 		if err != nil {
 			honeybadger.Notify(err)
