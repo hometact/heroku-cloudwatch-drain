@@ -1,3 +1,13 @@
+# Diff from forked repository
+
+The main changes made to this project that differentiate it from the repo it was forked from are:
+
+- newline handling was moved from main.go to ./logparser.go
+- instead of prefixing log lines with `{{app}}[{{process}}]: ` we are assuming that non-heroku app log messages are in json format and so the app and process are added to the message as json.
+- heroku app logs are converted to json
+
+Deps for this package need to be cleaned up, but if we need to do any more work on this project we should probably be rewriting it in JS.
+
 # heroku-cloudwatch-drain
 
 A Heroku HTTPS log drain that stores logs in CloudWatch Logs.

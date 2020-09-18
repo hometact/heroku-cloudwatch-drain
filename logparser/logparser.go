@@ -62,16 +62,26 @@ func (p *logParser) parse() (*LogEntry, error) {
 		return nil, fmt.Errorf("failed to skip to MSG: %s", err)
 	}
 
+	if len(p.b) <= 0 {
+		return nil, fmt.Errorf("log is zero length after APP-NAME and PROCID")
+	}
 	var endOfLog = len(p.b)
 	if string(p.b[len(p.b)-1:]) == "\n" {
 		endOfLog -= 1
 	}
+	if p.cursor > endOfLog {
+		return nil, fmt.Errorf("logparser cursor is positioned after the end of the log")
+	}
 	var logMetaData = "\"heroku_app\":\"" + app + "\",\"heroku_process\":\"" + process + "\","
 	var message string
+	var log = string(p.b[p.cursor:endOfLog])
+	if len(log) == 0 {
+		return nil, fmt.Errorf("received zero length log")
+	}
 	if app == "heroku" {
-		message = "{" + logMetaData + "\"message\":\"" + string(p.b[p.cursor:endOfLog]) + "\"}"
+		message = "{" + logMetaData + "\"message\":\"" + log + "\"}"
 	} else {
-		message = "{" + logMetaData + string(p.b[p.cursor:endOfLog])[1:]
+		message = "{" + logMetaData + log[1:]
 	}
 
 	return &LogEntry{
