@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"sync"
 	"time"
+	"strings"
 
 	"gopkg.in/tylerb/graceful.v1"
 
@@ -224,6 +225,10 @@ func (app *App) processMessages(r io.Reader, l logger, txn newrelic.Transaction)
 		m := entry.Message
 		if app.stripAnsiCodes {
 			m = stripAnsi(m)
+		}
+		// not forwarding heroku router messages for now
+		if strings.HasPrefix(m, "{\"heroku_app\":\"heroku\",\"heroku_process\":\"router\"") {
+			continue
 		}
 		l.Log(entry.Time, m)
 		if eof {
