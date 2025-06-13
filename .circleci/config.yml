@@ -85,8 +85,6 @@ workflows:
           requires:
             - build
       - deploy-production:
-          context: 
-            - org-global
-            - yonomi-one-production
+          context: org-global
           requires:
             - test
