@@ -79,7 +79,7 @@ workflows:
     jobs:
       - build:
           context: org-global
-          <<: *feature-branch-filter
+          <<: *master-branch-filter
       - test:
           context: org-global
           requires:
