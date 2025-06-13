@@ -32,7 +32,6 @@
     },
     "AWS_REGION": {
       "description": "The AWS region.",
-      "value": "us-east-1",
       "required": true
     },
     "GO_SETUP_GOPATH_IN_IMAGE": "true"
