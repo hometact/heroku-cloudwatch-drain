@@ -72,7 +72,7 @@ jobs:
     steps:
       - attach-to-workspace
       - deploy-to-heroku-via-git:
-          app-name: yonomi-cloudwatch-log-drain
+          app-name: yonomi-cloudwatch-drain
 
 workflows:
   deploy:
