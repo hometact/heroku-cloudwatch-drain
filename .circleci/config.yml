@@ -72,14 +72,14 @@ jobs:
     steps:
       - attach-to-workspace
       - deploy-to-heroku-via-git:
-          app-name: yonomi-cloudwatch-drain
+          app-name: yonomi-cloudwatch-log-drain
 
 workflows:
   deploy:
     jobs:
       - build:
           context: org-global
-          <<: *master-branch-filter
+          <<: *feature-branch-filter
       - test:
           context: org-global
           requires:
