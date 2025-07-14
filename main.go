@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"sync"
 	"time"
-	"strings"
+	// "strings"
 
 	"gopkg.in/tylerb/graceful.v1"
 
