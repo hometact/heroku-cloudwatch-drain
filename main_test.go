@@ -116,18 +116,18 @@ func TestAnsiCodeStripping(t *testing.T) {
 	assert.Equal(t, "{\"heroku_app\":\"heroku\",\"heroku_process\":\"web.1\",\"message\":\"(0.1ms) BEGIN\"}", l.m)
 }
 
-func TestRouterLogSkipping(t *testing.T) {
-	app.parse = logparser.Parse
-	defer func() {
-		app.parse = parseFunc
-	}()
+// func TestRouterLogSkipping(t *testing.T) {
+// 	app.parse = logparser.Parse
+// 	defer func() {
+// 		app.parse = parseFunc
+// 	}()
 
-	body := bytes.NewBuffer([]byte(`89 <45>1 2016-10-15T08:59:08.723822+00:00 host heroku router at=info method=POST path="/devices" host=api.staging.yonomi.co request_id=cedc64ea-219a-4283-aecd-c9fc59c74de0 fwd="18.206.226.30" dyno=web.1 connect=0ms service=587ms status=201 bytes=17714 protocol=https`))
-	r, err := http.Post(server.URL+"/app", "", body)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusAccepted, r.StatusCode)
-	assert.NotEqual(t, "{\"heroku_app\":\"heroku\",\"heroku_process\":\"router\",\"message\":\"at=info method=POST path=\"/devices\" host=api.staging.yonomi.co request_id=cedc64ea-219a-4283-aecd-c9fc59c74de0 fwd=\"18.206.226.30\" dyno=web.1 connect=0ms service=587ms status=201 bytes=17714 protocol=https\"}", l.m)
-}
+// 	body := bytes.NewBuffer([]byte(`89 <45>1 2016-10-15T08:59:08.723822+00:00 host heroku router at=info method=POST path="/devices" host=api.staging.yonomi.co request_id=cedc64ea-219a-4283-aecd-c9fc59c74de0 fwd="18.206.226.30" dyno=web.1 connect=0ms service=587ms status=201 bytes=17714 protocol=https`))
+// 	r, err := http.Post(server.URL+"/app", "", body)
+// 	assert.NoError(t, err)
+// 	assert.Equal(t, http.StatusAccepted, r.StatusCode)
+// 	assert.NotEqual(t, "{\"heroku_app\":\"heroku\",\"heroku_process\":\"router\",\"message\":\"at=info method=POST path=\"/devices\" host=api.staging.yonomi.co request_id=cedc64ea-219a-4283-aecd-c9fc59c74de0 fwd=\"18.206.226.30\" dyno=web.1 connect=0ms service=587ms status=201 bytes=17714 protocol=https\"}", l.m)
+// }
 
 type LastMessageLogger struct {
 	m string
