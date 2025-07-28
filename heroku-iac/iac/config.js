@@ -17,9 +17,10 @@ module.exports.appConfig =
       type: 'web',
       quantity: 1,
       dyno_size: {
-        id: '5c93cdee-2bbd-4fc0-9f04-d369d1dbb962', // Basic
+        id: '03307558-da97-4417-b1b3-e7f23b565422', // Standard-1X
       },
     },
   ],
+  features: ['preboot']
 }
   ;
