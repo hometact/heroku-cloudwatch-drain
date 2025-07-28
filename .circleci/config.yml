@@ -157,7 +157,7 @@ workflows:
     jobs:
       - build-heroku-iac:
           context: org-global
-          <<: *feature-branch-filter
+          <<: *master-branch-filter
       - deploy-heroku-infra:
           context:
             - org-global
