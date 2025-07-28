@@ -107,7 +107,7 @@ jobs:
       - deploy-to-heroku-via-git:
           app-name: $HEROKU_APP_NAME
   deploy-heroku-infra:
-    executor: default-executor
+    executor: node-executor
     steps:
       - attach-to-workspace
       - run:
@@ -116,7 +116,7 @@ jobs:
           command: |
             npm run heroku:deploy-infra
   scale-heroku-dyno:
-    executor: default-executor
+    executor: node-executor
     steps:
       - attach-to-workspace
       - run:
@@ -125,7 +125,7 @@ jobs:
           command: |
             npm run heroku:scale-dyno
   enable-features:
-    executor: default-executor
+    executor: node-executor
     steps:
       - attach-to-workspace
       - run:
