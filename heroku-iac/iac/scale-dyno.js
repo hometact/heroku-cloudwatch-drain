@@ -19,7 +19,7 @@ const log = logger.child('heroku-iac.scale-dyno');
 async function main() {
   log.info('Starting Heroku dyno scaling');
 
-  const appName = getEnv('APP_NAME');
+  const appName = getEnv('HEROKU_APP_NAME');
 
   if (!appConfig.formation) {
     log.warn(`Dyno configuration not specified for app ${appName}, skipping scaling`);
