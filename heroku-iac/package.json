@@ -1,0 +1,18 @@
+{
+  "name": "heroku-iac",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "heroku:deploy-infra": "node iac/deploy-infra.js",
+    "heroku:scale-dyno": "node iac/scale-dyno.js",
+    "heroku:enable-features": "node iac/enable-features.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@mechometact/yonomi-node-utils": "^1.0.2",
+    "heroku-client": "^3.1.0"
+  }
+}

@@ -1,7 +1,8 @@
 version: 2.1
 
 anchors:
-  - workspace-root: &workspace-root ~/minhtest-app
+  - workspace-root: &workspace-root ~/heroku-cloudwatch-drain-app
+  - workspace-heroku-iac: &workspace-heroku-iac ~/heroku-cloudwatch-drain-app/heroku-iac
   - &feature-branch-filter
     filters:
       branches:
@@ -16,6 +17,11 @@ executors:
     docker:
       - image: cimg/go:1.15
     working_directory: *workspace-root
+  
+  node-executor:
+    docker:
+     - image: cimg/node:18.16.1
+    working_directory: *workspace-heroku-iac
 
 commands:
   attach-to-workspace:
@@ -23,7 +29,24 @@ commands:
     steps:
       - attach_workspace:
           at: *workspace-root
-          
+  
+  attach-to-workspace-heroku-iac:
+    description: "Attach to the Heroku IAC workspace"
+    steps:
+      - attach_workspace:
+          at: *workspace-heroku-iac
+
+  bootstrap-node:
+    description: "Set up .npmrc and install npm dependencies"
+    steps:
+      - run:
+          name: Install npm dependencies
+          command: |
+            npm config set "//registry.npmjs.org/:_authToken" $NPM_TOKEN --userconfig ./.npmrc
+            node --version
+            npm --version
+            npm ci
+
   run-tests:
     description: "Run tests"
     steps:
@@ -46,7 +69,12 @@ commands:
             CURRENT_COMMIT=$(git rev-parse HEAD)
             # deploy that version of the app to heroku
             git push -f https://heroku:$HEROKU_API_KEY@git.heroku.com/<< parameters.app-name >>.git $CURRENT_COMMIT:refs/heads/master
-            
+
+parameters:
+  trigger-iac-restore:
+    type: boolean
+    default: false
+
 jobs:
   build:
     executor: default-executor
@@ -60,22 +88,57 @@ jobs:
           root: *workspace-root
           paths:
             - .
+
+  build-heroku-iac:
+    executor: node-executor
+    steps:
+      - checkout
+      - bootstrap-node
+      - persist_to_workspace:
+          root: *workspace-heroku-iac
+          paths:
+            - .
   test:
     executor: default-executor
     steps:
       - attach-to-workspace
       - run-tests
-  
   deploy-production:
     executor: default-executor
     working_directory: *workspace-root
     steps:
       - attach-to-workspace
       - deploy-to-heroku-via-git:
-          app-name: yonomi-cloudwatch-drain
+          app-name: $HEROKU_APP_NAME
+  deploy-heroku-infra:
+    executor: default-executor
+    steps:
+      - attach-to-workspace-heroku-iac
+      - run:
+          name: Deploy heroku infrastructure
+          command: |
+            npm run heroku:deploy-infra
+  scale-heroku-dyno:
+    executor: default-executor
+    steps:
+      - attach-to-workspace-heroku-iac
+      - run:
+          name: Scale Heroku Dyno
+          command: |
+            npm run heroku:scale-dyno
+  enable-features:
+    executor: default-executor
+    steps:
+      - attach-to-workspace-heroku-iac
+      - run:
+          name: Enable Heroku Features
+          command: |
+            npm run heroku:enable-features
 
 workflows:
   deploy:
+    when: 
+      equal: [false, << pipeline.parameters.trigger-iac-restore >>]
     jobs:
       - build:
           context: org-global
@@ -88,3 +151,40 @@ workflows:
           context: org-global
           requires:
             - test
+
+  iac-restore:
+    when: 
+      equal: [true, << pipeline.parameters.trigger-iac-restore >>]
+    jobs:
+      - build-heroku-iac:
+          context: org-global
+          <<: *feature-branch-filter
+      - deploy-heroku-infra:
+          context:
+            - org-global
+            - yonomi-one-prd
+      - build:
+          context: org-global
+          <<: *master-branch-filter
+      - test:
+          context: org-global
+          requires:
+            - build
+      - deploy-production:
+          requires:
+            - deploy-heroku-infra
+          context:
+            - org-global
+            - yonomi-one-prd
+      - scale-heroku-dyno:
+          context:
+            - org-global
+            - yonomi-one-prd
+          requires:
+            - deploy-production
+      - enable-features:
+          context:
+            - org-global
+            - yonomi-one-prd
+          requires:
+            - scale-heroku-dyno
