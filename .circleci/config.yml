@@ -21,7 +21,7 @@ executors:
   node-executor:
     docker:
      - image: cimg/node:18.16.1
-    working_directory: *workspace-heroku-iac
+    working_directory: *workspace-root
 
 commands:
   attach-to-workspace:
@@ -29,22 +29,18 @@ commands:
     steps:
       - attach_workspace:
           at: *workspace-root
-  
-  attach-to-workspace-heroku-iac:
-    description: "Attach to the Heroku IAC workspace"
-    steps:
-      - attach_workspace:
-          at: *workspace-heroku-iac
 
   bootstrap-node:
     description: "Set up .npmrc and install npm dependencies"
     steps:
       - run:
           name: Install npm dependencies
+          working_directory: *workspace-heroku-iac
           command: |
             npm config set "//registry.npmjs.org/:_authToken" $NPM_TOKEN --userconfig ./.npmrc
             node --version
             npm --version
+            pwd
             npm ci
 
   run-tests:
@@ -92,8 +88,7 @@ jobs:
   build-heroku-iac:
     executor: node-executor
     steps:
-      - checkout:
-          path: ~/heroku-cloudwatch-drain-app/heroku-iac
+      - checkout
       - bootstrap-node
       - persist_to_workspace:
           root: *workspace-heroku-iac
@@ -114,25 +109,28 @@ jobs:
   deploy-heroku-infra:
     executor: default-executor
     steps:
-      - attach-to-workspace-heroku-iac
+      - attach-to-workspace
       - run:
           name: Deploy heroku infrastructure
+          working_directory: *workspace-heroku-iac
           command: |
             npm run heroku:deploy-infra
   scale-heroku-dyno:
     executor: default-executor
     steps:
-      - attach-to-workspace-heroku-iac
+      - attach-to-workspace
       - run:
           name: Scale Heroku Dyno
+          working_directory: *workspace-heroku-iac
           command: |
             npm run heroku:scale-dyno
   enable-features:
     executor: default-executor
     steps:
-      - attach-to-workspace-heroku-iac
+      - attach-to-workspace
       - run:
           name: Enable Heroku Features
+          working_directory: *workspace-heroku-iac
           command: |
             npm run heroku:enable-features
 
@@ -168,7 +166,6 @@ workflows:
             - build-heroku-iac
       - build:
           context: org-global
-          <<: *master-branch-filter
           requires:
             - deploy-heroku-infra
       - test:
