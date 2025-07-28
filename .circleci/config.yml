@@ -92,7 +92,8 @@ jobs:
   build-heroku-iac:
     executor: node-executor
     steps:
-      - checkout
+      - checkout:
+          path: ~/heroku-cloudwatch-drain-app/heroku-iac
       - bootstrap-node
       - persist_to_workspace:
           root: *workspace-heroku-iac
@@ -163,16 +164,20 @@ workflows:
           context:
             - org-global
             - yonomi-one-prd
+          requires:
+            - build-heroku-iac
       - build:
           context: org-global
           <<: *master-branch-filter
+          requires:
+            - deploy-heroku-infra
       - test:
           context: org-global
           requires:
             - build
       - deploy-production:
           requires:
-            - deploy-heroku-infra
+            - test
           context:
             - org-global
             - yonomi-one-prd
