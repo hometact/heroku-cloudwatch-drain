@@ -143,7 +143,7 @@ jobs:
           environment:
             HEROKU_APP_NAME: << pipeline.parameters.heroku-app-name >>
   create-domain:
-    executor: default-executor
+    executor: node-executor
     steps:
       - attach-to-workspace
       - run:
