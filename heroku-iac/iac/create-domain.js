@@ -19,11 +19,9 @@ const log = logger.child('heroku-iac.create-domain');
 async function main() {
   log.info('Starting Heroku domain creation');
 
-  const appPrefix = getEnv('HEROKU_APP_PREFIX');
+  const appName = getEnv('HEROKU_APP_NAME');
 
   for (const appConfig of appsConfig) {
-    const appName = `${appPrefix}-${appConfig.stage}`;
-
     if (!appConfig.domain) {
       log.warn(`No domain to create for app ${appName}, skipping creation`);
     } else {
