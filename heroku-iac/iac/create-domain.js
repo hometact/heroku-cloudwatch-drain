@@ -21,15 +21,13 @@ async function main() {
 
   const appName = getEnv('HEROKU_APP_NAME');
 
-  for (const appConfig of appsConfig) {
-    if (!appConfig.domain) {
-      log.warn(`No domain to create for app ${appName}, skipping creation`);
-    } else {
-      await createDomain({
-        appName,
-        domain: appConfig.domain,
-      });
-    }
+  if (!appConfig.domain) {
+    log.warn(`No domain to create for app ${appName}, skipping creation`);
+  } else {
+    await createDomain({
+      appName,
+      domain: appConfig.domain,
+    });
   }
 
   log.info('Heroku domain creation completed');
