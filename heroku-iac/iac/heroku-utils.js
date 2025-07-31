@@ -15,7 +15,7 @@ const log = logger.child('heroku-iac.heroku-utils');
 const heroku = new Heroku({ token: process.env.HEROKU_API_KEY || '' });
 
 async function deployApp(appConfig) {
-  const { appName, teamId } = appConfig;
+  const { appName, teamId, stack } = appConfig;
 
   log.info('Creating app', { appName, teamId });
 
@@ -25,6 +25,7 @@ async function deployApp(appConfig) {
         name: appName,
         region: 'us',
         team: teamId,
+        stack,
       },
     });
 
@@ -224,6 +225,26 @@ async function enableFeatures(featuresConfig) {
   }
 }
 
+async function createDomain(domainConfig) {
+  const { appName, domain } = domainConfig;
+
+  log.info('Creating domain', { appName, domain });
+
+  try {
+    await heroku.post(`/apps/${appName}/domains`, {
+      body: {
+        hostname: domain,
+        sni_endpoint: null,
+      },
+    });
+
+    log.info('Domain created successfully', { appName, domain });
+  } catch (error) {
+    log.error('Error creating domain', { error });
+    throw error;
+  }
+}
+
 module.exports = {
   deployApp,
   deployPipeline,
@@ -233,4 +254,5 @@ module.exports = {
   createAddOns,
   setConfigVars,
   enableFeatures,
+  createDomain,
 };

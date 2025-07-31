@@ -5,7 +5,8 @@
   "scripts": {
     "heroku:deploy-infra": "node iac/deploy-infra.js",
     "heroku:scale-dyno": "node iac/scale-dyno.js",
-    "heroku:enable-features": "node iac/enable-features.js"
+    "heroku:enable-features": "node iac/enable-features.js",
+    "heroku:create-domain": "node iac/create-domain.js"
   },
   "keywords": [],
   "author": "",

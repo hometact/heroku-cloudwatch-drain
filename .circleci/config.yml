@@ -70,6 +70,9 @@ parameters:
   trigger-iac-restore:
     type: boolean
     default: false
+  heroku-app-name:
+    type: string
+    default: "yonomi-cloudwatch-drain"
 
 jobs:
   build:
@@ -105,7 +108,7 @@ jobs:
     steps:
       - attach-to-workspace
       - deploy-to-heroku-via-git:
-          app-name: $HEROKU_APP_NAME
+          app-name: << pipeline.parameters.heroku-app-name >>
   deploy-heroku-infra:
     executor: node-executor
     steps:
@@ -157,7 +160,6 @@ workflows:
     jobs:
       - build-heroku-iac:
           context: org-global
-          <<: *master-branch-filter
       - deploy-heroku-infra:
           context:
             - org-global

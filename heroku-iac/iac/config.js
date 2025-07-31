@@ -2,6 +2,7 @@ const { getEnv } = require('./utils');
 
 module.exports.appConfig =
 {
+  stack: 'heroku-22',
   config_vars: {
     "AWS_ACCESS_KEY_ID": getEnv('AWS_ACCESS_KEY_ID'),
     "AWS_REGION": getEnv('AWS_REGION'),

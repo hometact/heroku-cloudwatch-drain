@@ -28,6 +28,7 @@ async function main() {
   const app = await deployApp({
     appName,
     teamId,
+    stack: appConfig.stack,
   });
 
   await setConfigVars({
