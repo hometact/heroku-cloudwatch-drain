@@ -148,6 +148,7 @@ jobs:
       - attach-to-workspace
       - run:
           name: Create Heroku Domain
+          working_directory: *workspace-heroku-iac
           command: |
             npm run heroku:create-domain
           environment:
