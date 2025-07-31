@@ -118,6 +118,8 @@ jobs:
           working_directory: *workspace-heroku-iac
           command: |
             npm run heroku:deploy-infra
+          environment:
+            HEROKU_APP_NAME: << pipeline.parameters.heroku-app-name >>
   scale-heroku-dyno:
     executor: node-executor
     steps:
@@ -127,6 +129,8 @@ jobs:
           working_directory: *workspace-heroku-iac
           command: |
             npm run heroku:scale-dyno
+          environment:
+            HEROKU_APP_NAME: << pipeline.parameters.heroku-app-name >>
   enable-features:
     executor: node-executor
     steps:
@@ -136,6 +140,18 @@ jobs:
           working_directory: *workspace-heroku-iac
           command: |
             npm run heroku:enable-features
+          environment:
+            HEROKU_APP_NAME: << pipeline.parameters.heroku-app-name >>
+  create-domain:
+    executor: default-executor
+    steps:
+      - attach-to-workspace
+      - run:
+          name: Create Heroku Domain
+          command: |
+            npm run heroku:create-domain
+          environment:
+            HEROKU_APP_NAME: << pipeline.parameters.heroku-app-name >>
 
 workflows:
   deploy:
@@ -192,3 +208,9 @@ workflows:
             - yonomi-one-prd
           requires:
             - scale-heroku-dyno
+      - create-domain:
+          context:
+            - org-global
+            - yonomi-one-prd
+          requires:
+            - enable-features
