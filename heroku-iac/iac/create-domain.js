@@ -2,7 +2,7 @@
 /* eslint-disable no-await-in-loop */
 
 const { logger } = require('@mechometact/yonomi-node-utils');
-const { appsConfig } = require('./config');
+const { appConfig } = require('./config');
 const {
   createDomain,
 } = require('./heroku-utils');
