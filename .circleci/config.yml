@@ -1,7 +1,8 @@
 version: 2.1
 
 anchors:
-  - workspace-root: &workspace-root ~/minhtest-app
+  - workspace-root: &workspace-root ~/heroku-cloudwatch-drain-app
+  - workspace-heroku-iac: &workspace-heroku-iac ~/heroku-cloudwatch-drain-app/heroku-iac
   - &feature-branch-filter
     filters:
       branches:
@@ -16,6 +17,11 @@ executors:
     docker:
       - image: cimg/go:1.15
     working_directory: *workspace-root
+  
+  node-executor:
+    docker:
+     - image: cimg/node:18.16.1
+    working_directory: *workspace-root
 
 commands:
   attach-to-workspace:
@@ -23,7 +29,20 @@ commands:
     steps:
       - attach_workspace:
           at: *workspace-root
-          
+
+  bootstrap-node:
+    description: "Set up .npmrc and install npm dependencies"
+    steps:
+      - run:
+          name: Install npm dependencies
+          working_directory: *workspace-heroku-iac
+          command: |
+            npm config set "//registry.npmjs.org/:_authToken" $NPM_TOKEN --userconfig ./.npmrc
+            node --version
+            npm --version
+            pwd
+            npm ci
+
   run-tests:
     description: "Run tests"
     steps:
@@ -46,7 +65,15 @@ commands:
             CURRENT_COMMIT=$(git rev-parse HEAD)
             # deploy that version of the app to heroku
             git push -f https://heroku:$HEROKU_API_KEY@git.heroku.com/<< parameters.app-name >>.git $CURRENT_COMMIT:refs/heads/master
-            
+
+parameters:
+  trigger-iac-restore:
+    type: boolean
+    default: false
+  heroku-app-name:
+    type: string
+    default: "yonomi-cloudwatch-drain"
+
 jobs:
   build:
     executor: default-executor
@@ -60,22 +87,77 @@ jobs:
           root: *workspace-root
           paths:
             - .
+
+  build-heroku-iac:
+    executor: node-executor
+    steps:
+      - checkout
+      - bootstrap-node
+      - persist_to_workspace:
+          root: *workspace-heroku-iac
+          paths:
+            - .
   test:
     executor: default-executor
     steps:
       - attach-to-workspace
       - run-tests
-  
   deploy-production:
     executor: default-executor
     working_directory: *workspace-root
     steps:
       - attach-to-workspace
       - deploy-to-heroku-via-git:
-          app-name: yonomi-cloudwatch-drain
+          app-name: << pipeline.parameters.heroku-app-name >>
+  deploy-heroku-infra:
+    executor: node-executor
+    steps:
+      - attach-to-workspace
+      - run:
+          name: Deploy heroku infrastructure
+          working_directory: *workspace-heroku-iac
+          command: |
+            npm run heroku:deploy-infra
+          environment:
+            HEROKU_APP_NAME: << pipeline.parameters.heroku-app-name >>
+  scale-heroku-dyno:
+    executor: node-executor
+    steps:
+      - attach-to-workspace
+      - run:
+          name: Scale Heroku Dyno
+          working_directory: *workspace-heroku-iac
+          command: |
+            npm run heroku:scale-dyno
+          environment:
+            HEROKU_APP_NAME: << pipeline.parameters.heroku-app-name >>
+  enable-features:
+    executor: node-executor
+    steps:
+      - attach-to-workspace
+      - run:
+          name: Enable Heroku Features
+          working_directory: *workspace-heroku-iac
+          command: |
+            npm run heroku:enable-features
+          environment:
+            HEROKU_APP_NAME: << pipeline.parameters.heroku-app-name >>
+  create-domain:
+    executor: node-executor
+    steps:
+      - attach-to-workspace
+      - run:
+          name: Create Heroku Domain
+          working_directory: *workspace-heroku-iac
+          command: |
+            npm run heroku:create-domain
+          environment:
+            HEROKU_APP_NAME: << pipeline.parameters.heroku-app-name >>
 
 workflows:
   deploy:
+    when: 
+      equal: [false, << pipeline.parameters.trigger-iac-restore >>]
     jobs:
       - build:
           context: org-global
@@ -88,3 +170,48 @@ workflows:
           context: org-global
           requires:
             - test
+
+  iac-restore:
+    when: 
+      equal: [true, << pipeline.parameters.trigger-iac-restore >>]
+    jobs:
+      - build-heroku-iac:
+          context: org-global
+      - deploy-heroku-infra:
+          context:
+            - org-global
+            - yonomi-one-prd
+          requires:
+            - build-heroku-iac
+      - build:
+          context: org-global
+          requires:
+            - deploy-heroku-infra
+      - test:
+          context: org-global
+          requires:
+            - build
+      - deploy-production:
+          requires:
+            - test
+          context:
+            - org-global
+            - yonomi-one-prd
+      - scale-heroku-dyno:
+          context:
+            - org-global
+            - yonomi-one-prd
+          requires:
+            - deploy-production
+      - enable-features:
+          context:
+            - org-global
+            - yonomi-one-prd
+          requires:
+            - scale-heroku-dyno
+      - create-domain:
+          context:
+            - org-global
+            - yonomi-one-prd
+          requires:
+            - enable-features
