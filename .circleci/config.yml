@@ -20,7 +20,7 @@ executors:
 
   node-executor:
     docker:
-      - image: cimg/node:18.16.1
+      - image: cimg/node:22.15.1
     working_directory: *workspace-root
 
 commands:
