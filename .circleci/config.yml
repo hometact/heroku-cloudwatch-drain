@@ -105,7 +105,7 @@ jobs:
     steps:
       - attach-to-workspace
       - run-tests
-  deploy-production:
+  deploy:
     executor: default-executor
     working_directory: *workspace-root
     steps:
@@ -169,7 +169,7 @@ workflows:
           context: org-global
           requires:
             - build
-      - deploy-production:
+      - deploy:
           context: org-global
           requires:
             - test
@@ -194,7 +194,7 @@ workflows:
           context: org-global
           requires:
             - build
-      - deploy-production:
+      - deploy:
           requires:
             - test
           context:
@@ -205,7 +205,7 @@ workflows:
             - org-global
             - << pipeline.parameters.iac-restore-context >>
           requires:
-            - deploy-production
+            - deploy
       - enable-features:
           context:
             - org-global
