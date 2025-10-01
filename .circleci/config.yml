@@ -17,10 +17,10 @@ executors:
     docker:
       - image: cimg/go:1.15
     working_directory: *workspace-root
-  
+
   node-executor:
     docker:
-     - image: cimg/node:18.16.1
+      - image: cimg/node:22.15.1
     working_directory: *workspace-root
 
 commands:
@@ -73,6 +73,9 @@ parameters:
   heroku-app-name:
     type: string
     default: "yonomi-cloudwatch-drain"
+  iac-restore-context:
+    type: string
+    default: "yonomi-one-dev"
 
 jobs:
   build:
@@ -102,7 +105,7 @@ jobs:
     steps:
       - attach-to-workspace
       - run-tests
-  deploy-production:
+  deploy:
     executor: default-executor
     working_directory: *workspace-root
     steps:
@@ -156,7 +159,7 @@ jobs:
 
 workflows:
   deploy:
-    when: 
+    when:
       equal: [false, << pipeline.parameters.trigger-iac-restore >>]
     jobs:
       - build:
@@ -166,13 +169,13 @@ workflows:
           context: org-global
           requires:
             - build
-      - deploy-production:
+      - deploy:
           context: org-global
           requires:
             - test
 
   iac-restore:
-    when: 
+    when:
       equal: [true, << pipeline.parameters.trigger-iac-restore >>]
     jobs:
       - build-heroku-iac:
@@ -180,7 +183,7 @@ workflows:
       - deploy-heroku-infra:
           context:
             - org-global
-            - yonomi-one-prd
+            - << pipeline.parameters.iac-restore-context >>
           requires:
             - build-heroku-iac
       - build:
@@ -191,27 +194,27 @@ workflows:
           context: org-global
           requires:
             - build
-      - deploy-production:
+      - deploy:
           requires:
             - test
           context:
             - org-global
-            - yonomi-one-prd
+            - << pipeline.parameters.iac-restore-context >>
       - scale-heroku-dyno:
           context:
             - org-global
-            - yonomi-one-prd
+            - << pipeline.parameters.iac-restore-context >>
           requires:
-            - deploy-production
+            - deploy
       - enable-features:
           context:
             - org-global
-            - yonomi-one-prd
+            - << pipeline.parameters.iac-restore-context >>
           requires:
             - scale-heroku-dyno
       - create-domain:
           context:
             - org-global
-            - yonomi-one-prd
+            - << pipeline.parameters.iac-restore-context >>
           requires:
             - enable-features
